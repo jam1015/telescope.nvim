@@ -1,0 +1,35 @@
+name: Auto Sync Fork
+
+# Trigger the workflow on a schedule (e.g., every day at midnight UTC)
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allows manual trigger if needed
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Important: fetch the full history so merging works properly
+
+      - name: Configure Upstream Remote
+        run: |
+          git remote add upstream https://github.com/nvim-telescope/telescope.nvim.git || echo "Upstream already exists"
+
+      - name: Fetch Upstream Changes
+        run: git fetch upstream
+
+      - name: Merge Upstream Changes
+        run: |
+          # Checkout your default branch; adjust 'main' if your default branch is named differently (e.g., master)
+          git checkout master
+          # Merge changes from upstream; this uses fast-forward merge
+          git merge upstream/master --ff-only
+
+      - name: Push to Origin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git push origin master
